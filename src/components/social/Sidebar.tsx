@@ -36,8 +36,11 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <>
-      {/* Left nav strip */}
-      <div className="w-[62px] flex flex-col items-center py-3 gap-0.5 flex-shrink-0" style={{ background: "#17212b", borderRight: "1px solid #2a2a3a" }}>
+      {/* ── Desktop: left nav strip (hidden on mobile) ── */}
+      <div
+        className="hidden md:flex w-[62px] flex-col items-center py-3 gap-0.5 flex-shrink-0"
+        style={{ background: "#17212b", borderRight: "1px solid #2a2a3a" }}
+      >
         <button
           className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm mb-2 ring-2 ring-[#5288c1]"
           style={{ background: "#5288c1" }}
@@ -68,12 +71,25 @@ export default function Sidebar({
         ))}
       </div>
 
-      {/* Chat list panel */}
-      <div className="w-[300px] flex flex-col flex-shrink-0" style={{ background: "#17212b", borderRight: "1px solid #2a2a3a" }}>
+      {/* ── Chat list panel (desktop: fixed width, mobile: full width) ── */}
+      <div
+        className="flex flex-col flex-shrink-0 md:w-[300px] w-full"
+        style={{ background: "#17212b", borderRight: "1px solid #2a2a3a" }}
+      >
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 flex-shrink-0">
+        <div className="px-4 pt-4 pb-3 flex-shrink-0" style={{ paddingTop: "env(safe-area-inset-top, 16px)" }}>
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-[#e8eaf0] font-semibold">{sectionTitle}</h1>
+            {/* Mobile: show avatar button inline */}
+            <div className="flex items-center gap-2">
+              <button
+                className="md:hidden w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs ring-2 ring-[#5288c1]"
+                style={{ background: "#5288c1" }}
+                onClick={() => setActiveSection("settings")}
+              >
+                А
+              </button>
+              <h1 className="text-[#e8eaf0] font-semibold">{sectionTitle}</h1>
+            </div>
             <button className="p-1.5 rounded-lg transition-colors hover:bg-[#1f2d3d]">
               <Icon name="PenSquare" size={16} className="text-[#6c7883]" />
             </button>
@@ -142,19 +158,19 @@ export default function Sidebar({
         <div className="mx-4 mb-1 h-px" style={{ background: "#2a2a3a" }} />
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
           {(activeSection === "chats" || activeSection === "channels" || activeSection === "groups") &&
             filteredItems.map(chat => (
               <button
                 key={chat.id}
                 onClick={() => setActiveChat(chat)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left hover:bg-[#1f2d3d]"
+                className="w-full flex items-center gap-3 px-4 py-3 transition-colors text-left hover:bg-[#1f2d3d] active:bg-[#2b5278]"
                 style={activeChat?.id === chat.id ? { background: "#2b5278" } : {}}
               >
                 <div className="relative flex-shrink-0">
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white text-sm"
-                    style={{ background: chat.color }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white"
+                    style={{ background: chat.color, fontSize: "15px" }}
                   >
                     {chat.avatar}
                   </div>
@@ -202,10 +218,10 @@ export default function Sidebar({
                       {contact.name[0]}
                     </div>
                   )}
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors hover:bg-[#1f2d3d]">
+                  <div className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors hover:bg-[#1f2d3d] active:bg-[#1f2d3d]">
                     <div className="relative flex-shrink-0">
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm"
+                        className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white text-sm"
                         style={{ background: contact.color }}
                       >
                         {contact.avatar}
@@ -221,8 +237,8 @@ export default function Sidebar({
                       <p className="text-[#e8eaf0] text-sm font-medium truncate">{contact.name}</p>
                       <p className="text-[#6c7883] text-xs">{contact.phone}</p>
                     </div>
-                    <button className="p-1.5 rounded-lg transition-colors hover:bg-[#2a3a4a]">
-                      <Icon name="MessageCircle" size={15} className="text-[#5288c1]" />
+                    <button className="p-2 rounded-lg transition-colors hover:bg-[#2a3a4a]">
+                      <Icon name="MessageCircle" size={18} className="text-[#5288c1]" />
                     </button>
                   </div>
                 </div>

@@ -5,9 +5,17 @@ import { ChatWindow, EmptyPanel } from "@/components/social/ChatWindow";
 import { MediaPanel, SearchPanel, SettingsPanel } from "@/components/social/Panels";
 import Icon from "@/components/ui/icon";
 
+const BOTTOM_NAV = [
+  { id: "chats" as Section, icon: "MessageCircle", label: "Чаты" },
+  { id: "channels" as Section, icon: "Megaphone", label: "Каналы" },
+  { id: "groups" as Section, icon: "Users", label: "Группы" },
+  { id: "search" as Section, icon: "Search", label: "Поиск" },
+  { id: "settings" as Section, icon: "Settings", label: "Профиль" },
+];
+
 export default function Index() {
   const [activeSection, setActiveSection] = useState<Section>("chats");
-  const [activeChat, setActiveChat] = useState<Chat | null>(CHATS[0]);
+  const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState<Message[]>(MESSAGES);
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,8 +73,24 @@ export default function Index() {
     contacts: "Контакты", media: "Медиа", search: "Поиск", settings: "Настройки",
   }[activeSection];
 
+  const isListSection = activeSection === "chats" || activeSection === "channels" || activeSection === "groups" || activeSection === "contacts";
+  const showMobileChat = activeChat && isListSection;
+
+  const handleSelectChat = (chat: Chat) => {
+    setActiveChat(chat);
+  };
+
+  const handleBackFromChat = () => {
+    setActiveChat(null);
+  };
+
+  const handleSectionChange = (s: Section) => {
+    setActiveSection(s);
+    setActiveChat(null);
+  };
+
   return (
-    <div className="h-screen w-screen flex overflow-hidden font-golos" style={{ background: "#0f1923" }}>
+    <div className="h-screen w-screen flex flex-col overflow-hidden font-golos" style={{ background: "#0f1923" }}>
 
       {/* Story overlay */}
       {storyOpen && (
@@ -76,7 +100,6 @@ export default function Index() {
           onClick={closeStory}
         >
           <div className="w-[360px] max-w-[95vw] rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            {/* Progress */}
             <div className="flex gap-1 px-3 pt-3 absolute top-0 left-0 right-0 z-10 w-[360px] max-w-[95vw]">
               <div className="flex-1 h-0.5 bg-white/25 rounded-full overflow-hidden">
                 <div
@@ -130,39 +153,231 @@ export default function Index() {
         </div>
       )}
 
-      <Sidebar
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        activeChat={activeChat}
-        setActiveChat={setActiveChat}
-        filteredItems={filteredItems}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        sectionTitle={sectionTitle}
-        openStory={openStory}
-      />
+      {/* ── Main layout ── */}
+      <div className="flex flex-1 overflow-hidden">
 
-      {/* Main panel */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {activeSection === "settings" && <SettingsPanel />}
-        {activeSection === "media" && <MediaPanel />}
-        {activeSection === "search" && <SearchPanel />}
-        {activeSection === "contacts" && (
-          <EmptyPanel icon="BookUser" title="Контакты" desc="Выберите контакт из списка, чтобы написать сообщение" />
-        )}
-        {(activeSection === "chats" || activeSection === "channels" || activeSection === "groups") && (
-          activeChat ? (
-            <ChatWindow
+        {/* ── DESKTOP layout ── */}
+        <div className="hidden md:flex flex-1 overflow-hidden">
+          <Sidebar
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            activeChat={activeChat}
+            setActiveChat={handleSelectChat}
+            filteredItems={filteredItems}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            sectionTitle={sectionTitle}
+            openStory={openStory}
+          />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {activeSection === "settings" && <SettingsPanel />}
+            {activeSection === "media" && <MediaPanel />}
+            {activeSection === "search" && <SearchPanel />}
+            {activeSection === "contacts" && (
+              <EmptyPanel icon="BookUser" title="Контакты" desc="Выберите контакт из списка, чтобы написать сообщение" />
+            )}
+            {isListSection && activeSection !== "contacts" && (
+              activeChat ? (
+                <ChatWindow
+                  chat={activeChat}
+                  messages={messages}
+                  messageText={messageText}
+                  onTextChange={setMessageText}
+                  onSend={sendMessage}
+                />
+              ) : (
+                <EmptyPanel icon="MessageCircle" title="Выберите чат" desc="Нажмите на любой диалог, чтобы начать общение" />
+              )
+            )}
+          </div>
+        </div>
+
+        {/* ── MOBILE layout ── */}
+        <div className="flex md:hidden flex-1 overflow-hidden flex-col">
+          {/* Mobile: chat open — full screen chat with back button */}
+          {showMobileChat ? (
+            <MobileChatView
               chat={activeChat}
               messages={messages}
               messageText={messageText}
               onTextChange={setMessageText}
               onSend={sendMessage}
+              onBack={handleBackFromChat}
             />
           ) : (
-            <EmptyPanel icon="MessageCircle" title="Выберите чат" desc="Нажмите на любой диалог, чтобы начать общение" />
-          )
-        )}
+            <>
+              {/* Mobile: list/panel view */}
+              <div className="flex-1 overflow-hidden flex flex-col">
+                {activeSection === "settings" && <SettingsPanel />}
+                {activeSection === "media" && <MediaPanel />}
+                {activeSection === "search" && <SearchPanel />}
+                {isListSection && (
+                  <Sidebar
+                    activeSection={activeSection}
+                    setActiveSection={handleSectionChange}
+                    activeChat={activeChat}
+                    setActiveChat={handleSelectChat}
+                    filteredItems={filteredItems}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    sectionTitle={sectionTitle}
+                    openStory={openStory}
+                  />
+                )}
+              </div>
+              {/* Bottom navigation */}
+              <div
+                className="flex-shrink-0 flex items-center justify-around px-2 pt-2"
+                style={{
+                  background: "#17212b",
+                  borderTop: "1px solid #2a2a3a",
+                  paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+                }}
+              >
+                {BOTTOM_NAV.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSectionChange(item.id)}
+                    className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors relative"
+                    style={activeSection === item.id ? { color: "#5288c1" } : { color: "#6c7883" }}
+                  >
+                    <Icon name={item.icon} size={22} className={activeSection === item.id ? "text-[#5288c1]" : "text-[#6c7883]"} />
+                    <span className="text-[10px] font-medium">{item.label}</span>
+                    {activeSection === item.id && (
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ background: "#5288c1" }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileChatView({ chat, messages, messageText, onTextChange, onSend, onBack }: {
+  chat: Chat;
+  messages: Message[];
+  messageText: string;
+  onTextChange: (v: string) => void;
+  onSend: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Mobile chat header with back button */}
+      <div
+        className="flex items-center gap-3 px-3 py-3 flex-shrink-0"
+        style={{
+          background: "#17212b",
+          borderBottom: "1px solid #2a2a3a",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+        }}
+      >
+        <button
+          onClick={onBack}
+          className="p-1.5 rounded-full hover:bg-[#1f2d3d] transition-colors flex-shrink-0 mr-1"
+        >
+          <Icon name="ArrowLeft" size={20} className="text-[#5288c1]" />
+        </button>
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
+          style={{ background: chat.color }}
+        >
+          {chat.avatar}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[#e8eaf0] font-semibold text-sm truncate">{chat.name}</div>
+          <div className="text-xs text-[#6c7883]">
+            {chat.type === "channel"
+              ? "канал"
+              : chat.type === "group"
+              ? "группа · 12 участников"
+              : chat.online
+              ? "в сети"
+              : "был(а) недавно"}
+          </div>
+        </div>
+        <div className="flex items-center gap-0.5">
+          <button className="p-2 rounded-full transition-colors hover:bg-[#1f2d3d]">
+            <Icon name="Phone" size={18} className="text-[#6c7883]" />
+          </button>
+          <button className="p-2 rounded-full transition-colors hover:bg-[#1f2d3d]">
+            <Icon name="MoreVertical" size={18} className="text-[#6c7883]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div
+        className="flex-1 overflow-y-auto px-3 py-4 space-y-1"
+        style={{ background: "linear-gradient(180deg, #0f1923 0%, #131f2e 100%)" }}
+      >
+        {messages.map(msg => (
+          <div key={msg.id} className={`flex ${msg.mine ? "justify-end" : "justify-start"}`}>
+            <div
+              className="max-w-[80%] px-3 py-2 text-sm leading-relaxed"
+              style={{
+                background: msg.mine ? "#2b5278" : "#182533",
+                color: "#e8eaf0",
+                borderRadius: msg.mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+              }}
+            >
+              <p>{msg.text}</p>
+              <div className={`flex items-center gap-1 mt-0.5 ${msg.mine ? "justify-end" : "justify-start"}`}>
+                <span className="text-[10px]" style={{ color: "#6c8fa8" }}>{msg.time}</span>
+                {msg.mine && (
+                  <Icon
+                    name={msg.read ? "CheckCheck" : "Check"}
+                    size={12}
+                    className={msg.read ? "text-[#5288c1]" : "text-[#6c8fa8]"}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Input */}
+      <div
+        className="px-3 py-3 flex items-end gap-2 flex-shrink-0"
+        style={{
+          background: "#17212b",
+          borderTop: "1px solid #2a2a3a",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+        }}
+      >
+        <button className="p-2 rounded-full transition-colors hover:bg-[#1f2d3d] flex-shrink-0">
+          <Icon name="Paperclip" size={20} className="text-[#6c7883]" />
+        </button>
+        <div className="flex-1 rounded-2xl px-4 py-2 flex items-end gap-2" style={{ background: "#242f3d" }}>
+          <textarea
+            className="flex-1 bg-transparent text-[#e8eaf0] text-sm outline-none resize-none leading-5 placeholder:text-[#6c7883] max-h-32"
+            placeholder="Сообщение..."
+            value={messageText}
+            rows={1}
+            onChange={e => onTextChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSend();
+              }
+            }}
+          />
+          <button className="flex-shrink-0">
+            <Icon name="Smile" size={20} className="text-[#6c7883] hover:text-[#5288c1] transition-colors" />
+          </button>
+        </div>
+        <button
+          onClick={onSend}
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-95"
+          style={{ background: messageText.trim() ? "#5288c1" : "#242f3d" }}
+        >
+          <Icon name={messageText.trim() ? "Send" : "Mic"} size={18} className="text-white" />
+        </button>
       </div>
     </div>
   );

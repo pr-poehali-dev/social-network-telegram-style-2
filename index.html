@@ -2,10 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Поехали!</title>
-    <meta name="description" content="Poehali.dev — запусти свой сайт за минуту!"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <title>СоцСеть</title>
+    <meta name="description" content="Социальная сеть — чаты, каналы, группы, истории"/>
     <meta name="author" content="poehali.dev"/>
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.json"/>
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="apple-mobile-web-app-title" content="СоцСеть"/>
+    <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+    <link rel="apple-touch-startup-image" href="/icons/splash.png"/>
+
+    <!-- Android / theme -->
+    <meta name="theme-color" content="#17212b"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
+
+    <!-- Prevent zoom on input focus (iOS) -->
+    <style>
+      input, textarea, select { font-size: 16px !important; }
+      body { -webkit-tap-highlight-color: transparent; }
+    </style>
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +54,13 @@
 <body>
 <div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
